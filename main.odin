@@ -9,7 +9,8 @@ root : string;
 
 TreeInfo :: struct {
     path : string,
-    size : i64
+    size : i64,
+	is_dir : bool
 }
 
 tree_infos : #soa[dynamic]TreeInfo;
@@ -71,7 +72,7 @@ tree_size :: proc(path: string, ite: int) -> i64 {
     }
 
     if ite < 2 {
-        append_soa(&tree_infos, TreeInfo{info.fullpath, size});
+        append_soa(&tree_infos, TreeInfo{info.fullpath, size, info.is_dir});
     }
 
     if ite < 3 && info.is_dir {
@@ -102,14 +103,19 @@ output :: proc() {
         }
     }
 
-    for i in tree_infos {
-        using i;
+    for info in tree_infos {
+        using info;
         sb := strings.builder_make(context.temp_allocator);
         spaces := max_length_of_path + 4 - len(path);
+		if is_dir { spaces -= 3; }
         for i in 0..<spaces {strings.write_rune(&sb, ' ');}
         spacing_string := strings.to_string(sb);
         
-        fmt.printf("%s: %s%s\t%s\n", path, spacing_string, format_size(size, context.temp_allocator), format_percent(size, root_size));
+		if is_dir {
+            fmt.printf("%s\\.. %s%s\t%s\n", path, spacing_string, format_size(size, context.temp_allocator), format_percent(size, root_size));
+		} else {
+            fmt.printf("%s %s%s\t%s\n", path, spacing_string, format_size(size, context.temp_allocator), format_percent(size, root_size));
+		}
     }
 }
 
